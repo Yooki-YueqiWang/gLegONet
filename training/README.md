@@ -2,7 +2,7 @@
 
 The released library contains two single-purpose mechanisms trained on $Q=[-1,1]^2$: a dissipative diagonal Laplace response and a shared scalar density for the directional transport terms $u u_x$ and $u u_y$.
 
-This release provides parameterized training entry points but no ready-to-run or paper-specific parameter set. Inspect every required and optional input from the repository root:
+Inspect every required and optional training input from the repository root:
 
 ```bash
 python training/laplace/train.py --help

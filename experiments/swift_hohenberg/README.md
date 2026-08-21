@@ -1,3 +1,3 @@
 # Clamped Swift--Hohenberg experiment
 
-The higher-order composition implementation and experiment-specific utilities will be released after paper acceptance.
+This directory corresponds to the clamped Swift--Hohenberg study described in the manuscript.

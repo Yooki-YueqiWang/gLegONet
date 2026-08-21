@@ -4,8 +4,6 @@ Official research code for **Geometry-aware LegONet for PDE Learning on Arbitrar
 
 gLegONet separates reusable physical mechanisms from target geometry. Diffusion and directional-transport blocks are pretrained on the ambient square $Q=[-1,1]^2$. A deterministic boundary-adapted Galerkin interface then realizes those frozen blocks on an unseen embedded domain without geometry-specific neural retraining.
 
-> **Release status.** This pre-acceptance release contains block-training code, five manufactured-solution benchmarks, volume-constrained Allen--Cahn, vector Burgers, and sparse physical-law discovery. Checkpoints, generated artifacts, datasets, and paper-parameter files are not distributed. Cylinder-wake and clamped Swift--Hohenberg implementations are reserved for release after paper acceptance.
-
 ## Method
 
 The target PDE is decomposed into reusable mechanisms,
@@ -81,12 +79,11 @@ gLegONet/
 |   |-- allen_cahn/                # Volume-constrained Allen--Cahn
 |   |-- burgers/                   # Two-component Burgers comparison
 |   |-- inverse_discovery/         # Peanut/channel law identification
-|   |-- cylinder_wake/             # Post-acceptance placeholder
-|   `-- swift_hohenberg/           # Post-acceptance placeholder
+|   |-- cylinder_wake/             # Cylinder-wake study
+|   `-- swift_hohenberg/           # Swift--Hohenberg study
 |-- training/
 |   |-- laplace/                   # Dissipative diagonal block
 |   `-- transport/                 # Shared local density for x/y transport
-`-- tests/                         # Release-interface and source checks
 ```
 
 ## Installation
@@ -102,7 +99,7 @@ python -m pip install -r requirements.txt
 
 ## Command-line interfaces
 
-This repository intentionally does not include ready-to-run configurations or paper parameter values. Every public driver exposes its inputs through `argparse`; inspect the interface before constructing a run:
+Every public driver exposes its inputs through `argparse`. Inspect the interface before constructing a run:
 
 ```bash
 python training/laplace/train.py --help
@@ -121,18 +118,6 @@ python experiments/inverse_discovery/run.py --help
 ```
 
 Required options are marked in each help page. Training and experiment scripts reject incompatible checkpoint resolutions. The source code contains the PDE definitions, geometry construction, discretization, and solver logic needed to execute the workflow; users choose run parameters explicitly at the command line.
-
-## Data and checkpoints
-
-Manufactured fields, geometries, quadrature nodes, initial conditions, and inverse-discovery observations are generated at runtime, so no external dataset is required for the released experiments. Pretrained checkpoints are intentionally excluded. A checkpoint must use the same Fourier cutoff as its target experiment.
-
-Neural training and hardware-dependent linear algebra can introduce small stochastic variation. The code never substitutes an analytic block when a required learned checkpoint is missing.
-
-## Tests
-
-```bash
-python -m unittest discover -s tests -v
-```
 
 ## Citation
 
