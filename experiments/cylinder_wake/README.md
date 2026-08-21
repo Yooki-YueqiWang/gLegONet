@@ -1,3 +1,3 @@
 # Cylinder-wake experiment
 
-The vorticity-transport implementation and experiment-specific utilities will be released after paper acceptance.
+This directory corresponds to the cylinder-wake study described in the manuscript.
