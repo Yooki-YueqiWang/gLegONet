@@ -10,44 +10,44 @@ gLegONet separates reusable physical mechanisms from target geometry. Diffusion 
 
 The target PDE is decomposed into reusable mechanisms,
 
-$$
+```math
 \partial_t u(\mathbf{x},t)
 =
 \sum_{i=1}^{N_{\mathrm{blk}}} c_i L_i^\Omega(u)(\mathbf{x},t).
-$$
+```
 
 The ambient representation is the normalized real Fourier space
 
-$$
-\mathcal{V}_K(Q)=\operatorname{span}\!\left(
+```math
+\mathcal{V}_K(Q)=\mathrm{span}\left(
 \{1\}\cup
 \left\{\sqrt{2}\cos\bigl(\pi(kx+\ell y)\bigr),
 \sqrt{2}\sin\bigl(\pi(kx+\ell y)\bigr):(k,\ell)\in\mathcal{I}_K^+\right\}
-\right),
-$$
+\right)
+```
 
 where
 
-$$
+```math
 \mathcal{I}_K=\{(k,\ell)\in\mathbb{Z}^2:k^2+\ell^2\le K^2\}.
-$$
+```
 
 For each new domain, sampled boundary conditions define
 
-$$
+```math
 C\mathbf{a}(t)=\mathbf{d}(t),
 \qquad
 \mathbf{a}(t)=\mathbf{a}_{\mathrm{bc}}(t)+N_\Omega\mathbf{z}(t),
-$$
+```
 
 with $CN_\Omega\approx0$ and $N_\Omega^\top M_\Omega N_\Omega=I$. The reduced dynamics are
 
-$$
+```math
 \dot{\mathbf{z}}(t)
 =
 \sum_{i=1}^{N_{\mathrm{blk}}}c_i\,\mathbf{q}_i^\Omega(\mathbf{z},t)
 -N_\Omega^\top M_\Omega\dot{\mathbf{a}}_{\mathrm{bc}}(t).
-$$
+```
 
 The workflow is:
 
