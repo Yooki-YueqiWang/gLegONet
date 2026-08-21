@@ -1,0 +1,28 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Generated training artifacts and unpublished weights
+artifacts/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+
+# Experiment outputs
+runs*/
+outputs/
+*.npz
+*.npy
+*.csv
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
