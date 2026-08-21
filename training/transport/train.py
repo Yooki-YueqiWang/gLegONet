@@ -15,7 +15,7 @@ script trains a plain MLP density h_theta by the one-dimensional Sobolev target
 on a prescribed range of point values.  The learned density can then be
 re-integrated on any embedded domain Omega in a Section-3 weak/Galerkin transfer.
 
-The script also reports ambient K=22 diagnostics, but these are diagnostics only:
+The script also reports resolution-matched ambient diagnostics:
 
     H_theta(a) = mean_Q h_theta(Phi a),
     P_theta(a) = grad_a H_theta(a),
@@ -25,27 +25,8 @@ The script also reports ambient K=22 diagnostics, but these are diagnostics only
 The saved checkpoint uses a plain DensityNet state_dict compatible with existing
 loaders that instantiate DensityNet(width, depth, act).
 
-This fixed version avoids copying stale diagnostics into non-evaluation epochs and prints separate train/eval lines,
-uses stronger small-signal weighting by default, and treats ambient coefficient
-errors as diagnostics on the state amplitude actually relevant to the MMS rollout.
-
-Recommended Windows PowerShell command:
-
-python train_burgers_local_density_K22_plain_mlp.py `
-  --K 22 `
-  --n-grid 96 `
-  --epochs 3000 `
-  --steps-per-epoch 200 `
-  --batch-size 8192 `
-  --device cuda `
-  --u-max 1.0 `
-  --u-small-max 0.35 `
-  --small-frac 0.70 `
-  --lambda-g 1.0 `
-  --lambda-g-rel 1.0 `
-  --lambda-h 0.05 `
-  --lambda-zero 1.0 `
-  --outdir runs_ambient_burgers_K22_local_sobolev_plain
+The CLI exposes the training, architecture, diagnostic, and output parameters;
+inspect them with ``python train.py --help``.
 """
 from __future__ import annotations
 
@@ -114,7 +95,7 @@ def save_history_csv(path: str, rows: List[Dict[str, float]]) -> None:
 
 
 # -----------------------------------------------------------------------------
-# K=22 real trigonometric ambient basis for diagnostics
+# Real trigonometric ambient basis for diagnostics
 # -----------------------------------------------------------------------------
 
 
@@ -346,7 +327,7 @@ def evaluate_pointwise_samples(model: nn.Module, u: torch.Tensor, rel_floor_u: f
 
 
 # -----------------------------------------------------------------------------
-# Ambient K22 diagnostics only
+# Resolution-matched ambient diagnostics only
 # -----------------------------------------------------------------------------
 
 
@@ -539,10 +520,8 @@ def train(args: argparse.Namespace) -> None:
 
     meta = make_real_trig_basis_metadata(args.K)
     M = len(meta["k"])
-    if args.K == 22 and M != 1517:
-        raise RuntimeError(f"For K=22 expected M=1517, got M={M}")
     if args.n_grid < math.ceil(3.0 * args.K):
-        raise ValueError("n_grid should be at least ceil(3K); use 96 for K=22.")
+        raise ValueError("n_grid must be at least ceil(3K).")
 
     print(f"[setup] K={args.K}, M={M}, n_grid={args.n_grid}, dtype={dtype}, device={device}")
     Phi = evaluate_basis_on_grid(meta, args.n_grid, device, dtype)
@@ -715,7 +694,7 @@ def train(args: argparse.Namespace) -> None:
 
 
 def build_argparser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Train Burgers local density h(u) by Sobolev matching; K22 ambient diagnostics only.")
+    p = argparse.ArgumentParser(description="Train the Burgers local density h(u) by Sobolev matching with resolution-matched ambient diagnostics.")
     p.add_argument("--K", type=int, required=True)
     p.add_argument("--n-grid", type=int, required=True)
     p.add_argument("--width", type=int, required=True)
@@ -727,20 +706,20 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--n-test", type=int, required=True)
     p.add_argument("--batch-size", type=int, required=True)
     p.add_argument("--lr", type=float, required=True)
-    p.add_argument("--weight-decay", type=float, default=1.0e-8)
-    p.add_argument("--step-size", type=int, default=1000)
-    p.add_argument("--gamma", type=float, default=0.5)
+    p.add_argument("--weight-decay", type=float, required=True)
+    p.add_argument("--step-size", type=int, required=True)
+    p.add_argument("--gamma", type=float, required=True)
     p.add_argument("--grad-clip", type=float, default=1.0)
-    p.add_argument("--u-max", type=float, default=1.0)
-    p.add_argument("--u-small-max", type=float, default=0.35)
-    p.add_argument("--small-frac", type=float, default=0.70)
+    p.add_argument("--u-max", type=float, required=True)
+    p.add_argument("--u-small-max", type=float, required=True)
+    p.add_argument("--small-frac", type=float, required=True)
     p.add_argument("--rel-floor-u", type=float, default=0.05)
-    p.add_argument("--lambda-h", type=float, default=0.05)
-    p.add_argument("--lambda-g", type=float, default=1.0)
-    p.add_argument("--lambda-g-rel", type=float, default=1.0)
-    p.add_argument("--lambda-second", type=float, default=0.05)
-    p.add_argument("--lambda-zero", type=float, default=1.0)
-    p.add_argument("--eval-every", type=int, default=5)
+    p.add_argument("--lambda-h", type=float, required=True)
+    p.add_argument("--lambda-g", type=float, required=True)
+    p.add_argument("--lambda-g-rel", type=float, required=True)
+    p.add_argument("--lambda-second", type=float, required=True)
+    p.add_argument("--lambda-zero", type=float, required=True)
+    p.add_argument("--eval-every", type=int, required=True)
     p.add_argument("--ambient-eval-batches", type=int, default=16)
     p.add_argument("--ambient-eval-batch-size", type=int, default=16)
     p.add_argument("--small-eval-batches", type=int, default=8)
@@ -750,8 +729,8 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--amp", type=float, default=1.0)
     p.add_argument("--early-stop-patience", type=int, default=0)
     p.add_argument("--use-double", action="store_true")
-    p.add_argument("--device", type=str, default="cuda")
-    p.add_argument("--seed", type=int, default=1234)
+    p.add_argument("--device", type=str, required=True)
+    p.add_argument("--seed", type=int, required=True)
     p.add_argument("--outdir", type=str, required=True)
     return p
 

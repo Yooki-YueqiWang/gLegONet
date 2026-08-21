@@ -390,7 +390,7 @@ def main() -> None:
     p.add_argument('--seed', type=int, default=1234)
     p.add_argument('--log_every', type=int, default=400)
     p.add_argument('--laplace_block_path', type=str, required=True)
-    p.add_argument('--laplace_block_sign', type=str, default='auto', choices=['auto', 'positive_stiffness', 'laplace_symbol'])
+    p.add_argument('--laplace_block_sign', type=str, required=True, choices=['auto', 'positive_stiffness', 'laplace_symbol'])
     args = p.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)

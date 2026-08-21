@@ -95,7 +95,6 @@ def build_trig_basis_meta(K: int, radial_truncation: bool = True) -> List[Tuple[
     for one representative of each nonzero conjugate pair:
         k > 0, or k == 0 and ell > 0.
 
-    For K=22 this gives M=1517, matching the manuscript ambient space.
     """
     entries: List[Tuple[str, int, int]] = [("const", 0, 0)]
     pairs: List[Tuple[int, int]] = []
@@ -306,7 +305,7 @@ def load_learned_laplace_symbol(
     Ly: float,
     sign_convention: str = "auto",
 ) -> Tuple[np.ndarray, Dict[str, Any]]:
-    """Load the trained K=22 positive diagonal Laplace block.
+    """Load a resolution-matched positive diagonal Laplace block.
 
     The training script saves
         model_state.raw_diag, model_state.scale, model_state.nonzero_mask,

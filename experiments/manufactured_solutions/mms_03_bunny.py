@@ -478,7 +478,7 @@ def _bunny_radius_and_derivative(theta: np.ndarray) -> Tuple[np.ndarray, np.ndar
     """Smooth star-shaped bunny-head radius and derivative.
 
     The previous version used two very thin ears.  That made the Robin trace
-    difficult to represent with K=22 and produced a poor affine lift.  This
+    difficult to represent at a moderate ambient cutoff and produced a poor affine lift. This
     version keeps the bunny-head visual appearance but uses wider, smoother
     ears and a less pinched cleft, which is better aligned with the fixed
     ambient trigonometric space.
@@ -488,7 +488,7 @@ def _bunny_radius_and_derivative(theta: np.ndarray) -> Tuple[np.ndarray, np.ndar
     dr = np.zeros_like(theta)
 
     # Two broad ears.  The centers are intentionally separated but not too
-    # narrow; this keeps the curve smooth enough for K=22.
+    # narrow; this keeps the curve smooth enough for moderate Fourier cutoffs.
     for center, amp, width in [
         (0.5 * np.pi - 0.43, 0.305, 0.255),
         (0.5 * np.pi + 0.43, 0.305, 0.255),
@@ -658,7 +658,7 @@ def parse_args() -> Args:
     p.add_argument("--Nb", type=int, required=True)
     p.add_argument("--Nb_lift", type=int, required=True, help="Boundary sample count used to build the affine Robin lift/null-space.")
     p.add_argument("--Nb_dense", type=int, required=True)
-    p.add_argument("--lift_solver", type=str, default="normal_eq", choices=("normal_eq", "svd_exact"),
+    p.add_argument("--lift_solver", type=str, required=True, choices=("normal_eq", "svd_exact"),
                    help="Affine Robin lift assembly: fast normal-equation solve or more accurate SVD/null-space solve.")
     p.add_argument("--reduced_rank", type=int, required=True)
     p.add_argument("--tau_rel", type=float, default=1e-10)

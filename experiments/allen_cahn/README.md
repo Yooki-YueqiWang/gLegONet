@@ -11,5 +11,5 @@ $$
 on a disk with homogeneous Neumann data. The reaction half-steps use RK4 and the diffusion step uses Crank--Nicolson in a symmetric Strang composition. The mean correction is recomputed at every nonlinear RK stage.
 
 ```bash
-python scripts/run_config.py --config configs/paper/allen_cahn.json
+python experiments/allen_cahn/run.py --help
 ```

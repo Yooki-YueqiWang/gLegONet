@@ -10,10 +10,10 @@ This directory contains the five benchmarks in Figure 3. Each script constructs 
 | `mms_04_annular_star.py` | coupled reaction--diffusion | outer Dirichlet, inner Neumann |
 | `mms_05_pinwheel.py` | scalar Burgers transport | homogeneous Dirichlet |
 
-Run any case through its JSON file, for example:
+Inspect a case's required inputs before running it, for example:
 
 ```bash
-python scripts/run_config.py --config configs/paper/mms_03_bunny.json
+python experiments/manufactured_solutions/mms_03_bunny.py --help
 ```
 
-The learned block checkpoint is mandatory and must match the requested (K).
+The learned block checkpoint is mandatory and must match the requested Fourier cutoff.

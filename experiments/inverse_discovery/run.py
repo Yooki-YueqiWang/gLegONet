@@ -1284,10 +1284,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--solver_substeps", type=int, default=4, help="Internal RK4 substeps per long-rollout sample step.")
     p.add_argument("--train_integrator", type=str, default="rk4", choices=["rk4", "imex"], help="Integrator for short identification-reference trajectories.")
     p.add_argument("--rollout_integrator", type=str, default="imex", choices=["rk4", "imex"], help="Integrator for held-out long rollout reference generation and reduced rollout validation.")
-    p.add_argument("--obs_mode", type=str, default="sparse", choices=["sparse", "grid", "dense"])
+    p.add_argument("--obs_mode", type=str, required=True, choices=["sparse", "grid", "dense"])
     p.add_argument("--obs_list", type=core.parse_int_list, required=True)
     p.add_argument("--grid_obs_stride_list", type=core.parse_int_list, default=core.parse_int_list("1,2,3,4"))
-    p.add_argument("--n_repeats", type=int, default=3)
+    p.add_argument("--n_repeats", type=int, required=True)
     p.add_argument("--sensor_retries", type=int, default=30)
     p.add_argument("--obs_noise_rel", type=float, default=0.0)
 
@@ -1311,19 +1311,19 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--temporal_smooth_window", type=int, default=5)
     p.add_argument("--temporal_smooth_polyorder", type=int, default=3)
 
-    p.add_argument("--reference_mode", type=str, default="reduced_consistent", choices=["reduced_consistent", "projected_strong"])
+    p.add_argument("--reference_mode", type=str, required=True, choices=["reduced_consistent", "projected_strong"])
     p.add_argument("--projected_strong_backend", type=str, default="dense_render_reproject", choices=["dense_render_reproject", "legacy_masked_fd"])
     p.add_argument("--reference_render_Nx", type=int, default=151)
     p.add_argument("--reference_render_Nb", type=int, default=1400)
     p.add_argument("--reference_solver_substeps", type=int, default=8)
     p.add_argument("--basis_mode", type=str, default="boundary_adapted", choices=["boundary_adapted", "ambient_rank_matched", "full_ambient", "ambient"])
-    p.add_argument("--baseline_modes", type=parse_string_list, default=parse_string_list("ours,projected_fd,ambient_rank_matched"))
+    p.add_argument("--baseline_modes", type=parse_string_list, required=True)
     p.add_argument("--boundary_ablation_modes", type=parse_string_list, default=parse_string_list("boundary_adapted,ambient_rank_matched"))
     p.add_argument("--full_ambient_rank_cap", type=int, default=0)
     p.add_argument("--coeffs", type=str, default="")
 
     p.add_argument("--run_projection_diagnostic_only", type=int, default=0)
-    p.add_argument("--skip_projection_diagnostic", type=int, default=0)
+    p.add_argument("--skip_projection_diagnostic", type=int, required=True)
     p.add_argument("--skip_boundary_ablation", type=int, default=0)
     p.add_argument("--projection_error_warn", type=float, default=1.0e-3)
     p.add_argument("--true_residual_warn", type=float, default=1.0e-4)
@@ -1345,10 +1345,6 @@ def main() -> None:
     fd_note = fd_baseline_note(args)
     if fd_note:
         print(f"[fd-note] {fd_note}")
-    if float(args.T_roll) < 1.0:
-        print(f"[warning] T_roll={args.T_roll} is shorter than the paper-level target; prefer T_roll >= 1.0 for long-rollout validation.")
-    if float(args.T_roll) >= 1.0 and float(args.rollout_max_amp) < 50.0:
-        print(f"[warning] rollout_max_amp={args.rollout_max_amp} may be too small for long-rollout reference generation; prefer >= 50 for T_roll >= 1.")
 
     projection_rows: List[Dict[str, Any]] = []
     if not int(args.skip_projection_diagnostic) or int(args.run_projection_diagnostic_only):

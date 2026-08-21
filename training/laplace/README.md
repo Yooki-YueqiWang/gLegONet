@@ -6,4 +6,8 @@ $$
 \mathbf{F}_\Delta^\theta(\mathbf{a})=-G_\Delta\nabla_{\mathbf a}E_\Delta^\theta(\mathbf a).
 $$
 
-All training and output parameters are CLI inputs. See `configs/paper/train_laplace_k22.json` for the manuscript protocol and the explicitly labeled implementation controls.
+Training and output parameters are command-line inputs. Inspect the complete interface with:
+
+```bash
+python training/laplace/train.py --help
+```

@@ -9,7 +9,6 @@ protocol:
     Delta phi_{k,l} = -pi^2 (k^2+l^2) phi_{k,l},
 
 using the real trigonometric basis with radial cutoff k^2+l^2 <= K^2.
-For K=22 the dimension is M=1517.
 
 Outputs
 -------
@@ -22,8 +21,7 @@ Outputs
 - laplace_spectrum_compare.png
 - laplace_dissipation_verify.png
 
-Use the checked JSON configuration through ``scripts/run_config.py`` or inspect
-the complete CLI with ``python train.py --help``.
+Inspect the complete parameter interface with ``python train.py --help``.
 """
 
 from __future__ import annotations
@@ -294,9 +292,6 @@ def train(args: argparse.Namespace) -> None:
 
     meta = make_real_trig_basis_metadata(args.K)
     M = len(meta["lambda"])
-    if args.K == 22 and M != 1517:
-        raise RuntimeError(f"Expected M=1517 for K=22, got M={M}")
-
     lambda_vec = torch.tensor(meta["lambda"], device=device)
     sigma_vec = torch.tensor(meta["sigma"], device=device)
     lambda_scaled = lambda_vec / torch.max(lambda_vec)
@@ -413,19 +408,19 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--n-test", type=int, required=True)
     p.add_argument("--batch-size", type=int, required=True)
     p.add_argument("--lr", type=float, required=True)
-    p.add_argument("--weight-decay", type=float, default=0.0)
-    p.add_argument("--step-lr", type=int, default=40)
-    p.add_argument("--gamma", type=float, default=0.3)
-    p.add_argument("--init-scaled-diag", type=float, default=0.10)
+    p.add_argument("--weight-decay", type=float, required=True)
+    p.add_argument("--step-lr", type=int, required=True)
+    p.add_argument("--gamma", type=float, required=True)
+    p.add_argument("--init-scaled-diag", type=float, required=True)
     p.add_argument(
         "--loss-mode",
         type=str,
-        default="sample_mse_scaled",
+        required=True,
         choices=["sample_mse_scaled", "spectrum_log_mse", "spectrum_rel_mse"],
     )
-    p.add_argument("--loss-eps", type=float, default=1.0e-14)
-    p.add_argument("--seed", type=int, default=123)
-    p.add_argument("--device", type=str, default="cuda", choices=["cuda", "cpu"])
+    p.add_argument("--loss-eps", type=float, required=True)
+    p.add_argument("--seed", type=int, required=True)
+    p.add_argument("--device", type=str, required=True, choices=["cuda", "cpu"])
     return p.parse_args()
 
 

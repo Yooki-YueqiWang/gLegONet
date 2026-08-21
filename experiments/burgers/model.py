@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Compare the pretrained ambient K=22 Burgers/Laplace blocks against exact S3
+Compare pretrained ambient Burgers/Laplace blocks against exact S3
 operators on the same boundary-adapted reduced space for the inner-square
 vector Burgers problem.
 
@@ -438,7 +438,7 @@ def build_models(args: argparse.Namespace) -> Tuple[TorchReducedVectorBurgersMod
         memory_mib=mem,
     )
     learned_model = TorchReducedVectorBurgersModel(
-        name="Learned block K22 (same-space)",
+        name="Learned block (same-space)",
         mode="learned",
         device=device,
         dtype=dtype,
@@ -540,7 +540,7 @@ def run_pairwise_comparison(exact_model: TorchReducedVectorBurgersModel, learned
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Compare pretrained K=22 learned blocks against exact S3 on the same inner-square reduced space.")
+    p = argparse.ArgumentParser(description="Compare pretrained learned blocks against exact S3 on the same inner-square reduced space.")
     p.add_argument("--outdir", type=str, required=True)
     p.add_argument("--K", type=int, required=True)
     p.add_argument("--box_halfwidth", type=float, required=True)
@@ -569,7 +569,7 @@ def main() -> None:
     outdir.mkdir(parents=True, exist_ok=True)
 
     print("=" * 100, flush=True)
-    print("Inner-square Burgers: K=22 learned block vs exact S3 (same reduced space)", flush=True)
+    print("Inner-square Burgers: learned block vs exact S3 (same reduced space)", flush=True)
     print("=" * 100, flush=True)
     print(
         f"[setup] K={args.K} rank={args.rank} h={args.inner_halfwidth} nu={args.nu} "

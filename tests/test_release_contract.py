@@ -1,82 +1,107 @@
 from __future__ import annotations
 
-import json
-import re
 import ast
-import subprocess
-import sys
+import re
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG_DIR = ROOT / "configs" / "paper"
+
+PUBLIC_ENTRYPOINTS = {
+    "training/laplace/train.py": {
+        "--K", "--outdir", "--epochs", "--n-train", "--n-test", "--batch-size", "--lr",
+        "--weight-decay", "--step-lr", "--gamma", "--init-scaled-diag", "--loss-mode",
+        "--loss-eps", "--seed", "--device"
+    },
+    "training/transport/train.py": {
+        "--K", "--n-grid", "--width", "--depth", "--act", "--epochs", "--n-train",
+        "--n-test", "--batch-size", "--lr", "--outdir", "--weight-decay", "--step-size",
+        "--gamma", "--u-max", "--u-small-max", "--small-frac", "--lambda-h", "--lambda-g",
+        "--lambda-g-rel", "--lambda-second", "--lambda-zero", "--eval-every", "--device", "--seed"
+    },
+    "experiments/manufactured_solutions/mms_01_rosette.py": {
+        "--K", "--Nb", "--reduced_rank", "--T", "--dt", "--laplace_checkpoint"
+    },
+    "experiments/manufactured_solutions/mms_02_crescent.py": {
+        "--K", "--Nb_outer", "--Nb_inner", "--reduced_rank", "--T", "--dt", "--laplace_checkpoint"
+    },
+    "experiments/manufactured_solutions/mms_03_bunny.py": {
+        "--K", "--Nb", "--Nb_lift", "--lift_solver", "--reduced_rank", "--T", "--dt", "--laplace_checkpoint"
+    },
+    "experiments/manufactured_solutions/mms_04_annular_star.py": {
+        "--K", "--Nb_outer", "--Nb_inner", "--reduced_rank", "--T", "--dt", "--laplace_checkpoint"
+    },
+    "experiments/manufactured_solutions/mms_05_pinwheel.py": {
+        "--K", "--Nb", "--reduced_rank", "--T", "--dt", "--laplace_checkpoint", "--transport_checkpoint"
+    },
+    "experiments/allen_cahn/run.py": {
+        "--K", "--Nb_build", "--reduced_rank", "--T", "--dt", "--laplace_block_path", "--laplace_block_sign"
+    },
+    "experiments/burgers/run.py": {
+        "--K", "--Nb_build", "--rank", "--T", "--dt", "--laplace_ckpt", "--burgers_ckpt", "--ref_N"
+    },
+    "experiments/burgers/model.py": {
+        "--K", "--Nb_build", "--rank", "--T", "--dt", "--laplace_ckpt", "--burgers_ckpt"
+    },
+    "experiments/inverse_discovery/run.py": {
+        "--shape", "--K", "--rank", "--Nx", "--Nb", "--n_pairs", "--T_id", "--T_roll",
+        "--dt_obs", "--dt_solver", "--obs_list", "--coeff_ridge", "--threshold",
+        "--max_threshold_iterations", "--active_tol", "--laplace_checkpoint", "--transport_checkpoint",
+        "--obs_mode", "--n_repeats", "--reference_mode", "--baseline_modes", "--skip_projection_diagnostic"
+    },
+}
+
+
+def declared_options(path: Path) -> dict[str, bool]:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    options: dict[str, bool] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+            continue
+        if node.func.attr != "add_argument" or not node.args:
+            continue
+        first = node.args[0]
+        if not isinstance(first, ast.Constant) or not isinstance(first.value, str):
+            continue
+        if not first.value.startswith("--"):
+            continue
+        required = any(
+            keyword.arg == "required"
+            and isinstance(keyword.value, ast.Constant)
+            and keyword.value.value is True
+            for keyword in node.keywords
+        )
+        options[first.value] = required
+    return options
 
 
 class ReleaseContractTests(unittest.TestCase):
-    def load(self, name: str) -> dict:
-        return json.loads((CONFIG_DIR / name).read_text(encoding="utf-8"))
+    def test_public_entrypoints_exist(self) -> None:
+        for relative_path in PUBLIC_ENTRYPOINTS:
+            self.assertTrue((ROOT / relative_path).is_file(), relative_path)
 
-    def test_all_config_entrypoints_exist_and_dry_run(self) -> None:
-        configs = sorted(CONFIG_DIR.glob("*.json"))
-        self.assertGreaterEqual(len(configs), 11)
-        for path in configs:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-            self.assertEqual(payload["schema_version"], 1)
-            self.assertTrue((ROOT / payload["entrypoint"]).is_file(), path.name)
-            subprocess.run(
-                [sys.executable, str(ROOT / "scripts" / "run_config.py"), "--config", str(path), "--dry-run"],
-                cwd=ROOT,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
+    def test_scientific_inputs_are_required_cli_options(self) -> None:
+        for relative_path, expected_required in PUBLIC_ENTRYPOINTS.items():
+            options = declared_options(ROOT / relative_path)
+            self.assertEqual(expected_required - options.keys(), set(), relative_path)
+            not_required = {option for option in expected_required if not options[option]}
+            self.assertEqual(not_required, set(), relative_path)
 
-    def test_config_keys_are_declared_cli_options(self) -> None:
-        for path in sorted(CONFIG_DIR.glob("*.json")):
-            payload = json.loads(path.read_text(encoding="utf-8"))
-            source = (ROOT / payload["entrypoint"]).read_text(encoding="utf-8")
-            tree = ast.parse(source)
-            options: set[str] = set()
-            for node in ast.walk(tree):
-                if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
-                    continue
-                if node.func.attr != "add_argument":
-                    continue
-                for argument in node.args:
-                    if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
-                        if argument.value.startswith("--"):
-                            options.add(argument.value)
-            configured = {f"--{key}" for key in payload["arguments"]}
-            self.assertEqual(configured - options, set(), path.name)
+    def test_no_bundled_parameter_configuration(self) -> None:
+        self.assertFalse((ROOT / "config" "s").exists())
+        self.assertFalse((ROOT / "scripts" / ("run_" "config.py")).exists())
 
-    def test_figure3_k_boundary_counts_and_ranks(self) -> None:
-        expected = {
-            "mms_01_rosette.json": (420, 207),
-            "mms_02_crescent.json": (620, 220),
-            "mms_03_bunny.json": (420, 843),
-            "mms_04_annular_star.json": (720, 832),
-            "mms_05_pinwheel.json": (420, 644),
-        }
-        for name, (boundary_count, rank) in expected.items():
-            args = self.load(name)["arguments"]
-            count = args.get("Nb", args.get("Nb_outer", 0) + args.get("Nb_inner", 0))
-            self.assertEqual(args["K"], 22, name)
-            self.assertEqual(count, boundary_count, name)
-            self.assertEqual(args["reduced_rank"], rank, name)
-
-    def test_inverse_protocol_matches_manuscript(self) -> None:
-        for name in ("inverse_peanut.json", "inverse_channel.json"):
-            args = self.load(name)["arguments"]
-            self.assertEqual(args["K"], 22)
-            self.assertEqual(args["rank"], 80)
-            self.assertEqual(args["n_pairs"], 16)
-            self.assertEqual(args["T_id"], 0.012)
-            self.assertEqual(args["dt_obs"], 5e-5)
-            self.assertEqual(args["obs_list"], [240, 1000])
-            self.assertEqual(args["coeff_ridge"], 1e-10)
-            self.assertEqual(args["threshold"], 2e-3)
-            self.assertEqual(args["max_threshold_iterations"], 5)
+        forbidden = ("configs/" "paper", "scripts/" "run_config.py")
+        suffixes = {".py", ".md", ".yml", ".yaml", ".cff", ".txt"}
+        for path in ROOT.rglob("*"):
+            if not path.is_file() or path.suffix.lower() not in suffixes:
+                continue
+            if ".git" in path.parts:
+                continue
+            text = path.read_text(encoding="utf-8").replace("\\", "/")
+            for phrase in forbidden:
+                self.assertNotIn(phrase, text, str(path))
 
     def test_repository_text_contains_no_chinese_characters(self) -> None:
         han = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
