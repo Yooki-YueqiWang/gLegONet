@@ -77,6 +77,12 @@ def declared_options(path: Path) -> dict[str, bool]:
 
 
 class ReleaseContractTests(unittest.TestCase):
+    def test_readme_uses_github_compatible_math_blocks(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertNotIn("$$", readme)
+        self.assertNotIn("\\operatorname", readme)
+        self.assertGreaterEqual(readme.count("```math"), 5)
+
     def test_public_entrypoints_exist(self) -> None:
         for relative_path in PUBLIC_ENTRYPOINTS:
             self.assertTrue((ROOT / relative_path).is_file(), relative_path)
