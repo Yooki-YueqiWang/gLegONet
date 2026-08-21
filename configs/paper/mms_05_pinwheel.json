@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "entrypoint": "experiments/manufactured_solutions/mms_05_pinwheel.py",
+  "arguments": {
+    "outdir": "outputs/mms_05_pinwheel",
+    "K": 22,
+    "Nx_eval": 161,
+    "Nb": 420,
+    "Nb_dense": 1600,
+    "reduced_rank": 644,
+    "T": 0.9,
+    "dt": 0.0012,
+    "nu": 0.035,
+    "amp": 2.6,
+    "omega": 4.0,
+    "laplace_checkpoint": "artifacts/laplace/K22/model_state.pt",
+    "transport_checkpoint": "artifacts/transport/K22/model_state.pt"
+  }
+}

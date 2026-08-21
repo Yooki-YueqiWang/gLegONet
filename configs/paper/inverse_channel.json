@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "entrypoint": "experiments/inverse_discovery/run.py",
+  "arguments": {
+    "outdir": "outputs/inverse_channel",
+    "shape": "channel",
+    "K": 22,
+    "rank": 80,
+    "laplace_checkpoint": "artifacts/laplace/K22/model_state.pt",
+    "transport_checkpoint": "artifacts/transport/K22/model_state.pt",
+    "Nx": 91,
+    "Nb": 900,
+    "n_pairs": 16,
+    "T_id": 0.012,
+    "T_roll": 1.0,
+    "dt_obs": 0.00005,
+    "dt_solver": 0.001,
+    "obs_mode": "sparse",
+    "obs_list": [240, 1000],
+    "n_repeats": 3,
+    "coeff_ridge": 1e-10,
+    "threshold": 0.002,
+    "max_threshold_iterations": 5,
+    "active_tol": 0.002,
+    "reference_mode": "reduced_consistent",
+    "baseline_modes": "ours,projected_fd,ambient_rank_matched",
+    "skip_projection_diagnostic": 1
+  }
+}

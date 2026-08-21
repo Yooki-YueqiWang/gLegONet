@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the manuscript below."
+title: "Geometry-aware LegONet"
+type: software
+version: 0.1.0
+repository-code: "https://github.com/Yooki-YueqiWang/gLegONet"
+authors:
+  - family-names: Zhang
+    given-names: Jiahao
+  - family-names: Wang
+    given-names: Yueqi
+  - family-names: Lin
+    given-names: Guang
+preferred-citation:
+  type: article
+  title: "Geometry-aware LegONet for PDE Learning on Arbitrary Domains"
+  year: 2026
+  journal: "Manuscript under review"
+  authors:
+    - family-names: Zhang
+      given-names: Jiahao
+    - family-names: Wang
+      given-names: Yueqi
+    - family-names: Lin
+      given-names: Guang

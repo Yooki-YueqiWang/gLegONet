@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "entrypoint": "experiments/burgers/run.py",
+  "arguments": {
+    "outdir": "outputs/burgers",
+    "K": 22,
+    "box_halfwidth": 1.0,
+    "inner_halfwidth": 0.55,
+    "n_quad": 89,
+    "Nb_build": 1000,
+    "Nb_dense": 4200,
+    "rank": 833,
+    "nu": 0.01,
+    "dt": 0.0005,
+    "T": 0.5,
+    "nonlinear_substeps": 6,
+    "laplace_ckpt": "artifacts/laplace/K22/model_state.pt",
+    "burgers_ckpt": "artifacts/transport/K22/model_state.pt",
+    "ref_N": 201
+  }
+}

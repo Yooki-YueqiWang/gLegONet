@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "entrypoint": "training/transport/train.py",
+  "arguments": {
+    "K": 22,
+    "outdir": "artifacts/transport/K22",
+    "n-grid": 96,
+    "width": 128,
+    "depth": 4,
+    "act": "gelu",
+    "epochs": 1500,
+    "n-train": 20000,
+    "n-test": 4000,
+    "batch-size": 16,
+    "lr": 0.0005,
+    "weight-decay": 0.0,
+    "step-size": 1000,
+    "gamma": 0.5,
+    "u-max": 1.0,
+    "u-small-max": 1.0,
+    "small-frac": 0.0,
+    "lambda-h": 0.0,
+    "lambda-g": 1.0,
+    "lambda-g-rel": 0.0,
+    "lambda-second": 0.0,
+    "lambda-zero": 0.0,
+    "eval-every": 5,
+    "device": "cuda",
+    "seed": 1234
+  },
+  "provenance": {
+    "manuscript": ["K", "width", "depth", "act", "n-train", "n-test", "batch-size", "lr", "u-max"],
+    "implementation_controls_not_reported_in_manuscript": ["n-grid", "epochs", "step-size", "gamma", "seed"]
+  }
+}
