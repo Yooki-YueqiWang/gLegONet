@@ -49,9 +49,14 @@ import matplotlib.pyplot as plt
 # -----------------------------------------------------------------------------
 
 
-def inv_softplus(y: torch.Tensor | float) -> torch.Tensor:
+def inv_softplus(
+    y: torch.Tensor | float,
+    *,
+    dtype: torch.dtype | None = None,
+    device: torch.device | None = None,
+) -> torch.Tensor:
     """Numerically stable inverse of softplus for positive y."""
-    y_t = torch.as_tensor(y, dtype=torch.float32)
+    y_t = torch.as_tensor(y, dtype=dtype, device=device)
     return y_t + torch.log(-torch.expm1(-y_t))
 
 
@@ -120,14 +125,18 @@ class PositiveDiagonalLaplace(nn.Module):
         super().__init__()
         if lambda_vec.ndim != 1:
             raise ValueError("lambda_vec must be one-dimensional")
-        self.register_buffer("lambda_vec", lambda_vec.float())
+        self.register_buffer("lambda_vec", lambda_vec.clone())
         scale = float(torch.max(lambda_vec).item())
         if scale <= 0.0:
             raise ValueError("The Laplace scale must be positive")
-        self.register_buffer("scale", torch.tensor(scale, dtype=torch.float32))
-        self.register_buffer("nonzero_mask", (lambda_vec > 0).float())
+        self.register_buffer("scale", lambda_vec.new_tensor(scale))
+        self.register_buffer("nonzero_mask", (lambda_vec > 0).to(dtype=lambda_vec.dtype))
 
-        raw0 = inv_softplus(init_scaled_diag).expand_as(lambda_vec).clone()
+        raw0 = inv_softplus(
+            init_scaled_diag,
+            dtype=lambda_vec.dtype,
+            device=lambda_vec.device,
+        ).expand_as(lambda_vec).clone()
         self.raw_diag = nn.Parameter(raw0)
 
     def scaled_diag(self) -> torch.Tensor:
@@ -163,6 +172,13 @@ def laplace_training_loss(
         pred_scaled = model.forward_scaled(coefficients)
         true_scaled = -lambda_scaled.unsqueeze(0) * coefficients
         return torch.mean((pred_scaled - true_scaled) ** 2)
+
+    if loss_mode == "sample_relative_mse":
+        pred = model(coefficients)
+        true = -model.lambda_vec.unsqueeze(0) * coefficients
+        numerator = torch.sum((pred - true) ** 2, dim=1)
+        denominator = torch.sum(true ** 2, dim=1) + loss_eps
+        return torch.mean(numerator / denominator)
 
     if loss_mode == "spectrum_log_mse":
         mask = model.lambda_vec > 0
@@ -292,8 +308,9 @@ def train(args: argparse.Namespace) -> None:
 
     meta = make_real_trig_basis_metadata(args.K)
     M = len(meta["lambda"])
-    lambda_vec = torch.tensor(meta["lambda"], device=device)
-    sigma_vec = torch.tensor(meta["sigma"], device=device)
+    dtype = {"float32": torch.float32, "float64": torch.float64}[args.dtype]
+    lambda_vec = torch.tensor(meta["lambda"], device=device, dtype=dtype)
+    sigma_vec = torch.tensor(meta["sigma"], device=device, dtype=dtype)
     lambda_scaled = lambda_vec / torch.max(lambda_vec)
     train_coefficients = sample_coefficients(args.n_train, sigma_vec, device)
     test_coefficients = sample_coefficients(args.n_test, sigma_vec, device)
@@ -416,11 +433,12 @@ def parse_args() -> argparse.Namespace:
         "--loss-mode",
         type=str,
         required=True,
-        choices=["sample_mse_scaled", "spectrum_log_mse", "spectrum_rel_mse"],
+        choices=["sample_relative_mse", "sample_mse_scaled", "spectrum_log_mse", "spectrum_rel_mse"],
     )
     p.add_argument("--loss-eps", type=float, required=True)
     p.add_argument("--seed", type=int, required=True)
     p.add_argument("--device", type=str, required=True, choices=["cuda", "cpu"])
+    p.add_argument("--dtype", type=str, default="float32", choices=["float32", "float64"])
     return p.parse_args()
 
 

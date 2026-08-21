@@ -13,4 +13,4 @@ jobs:
         with:
           python-version: "3.11"
       - name: Compile Python sources
-        run: python -m compileall -q experiments training
+        run: python -m compileall -q experiments training workflows

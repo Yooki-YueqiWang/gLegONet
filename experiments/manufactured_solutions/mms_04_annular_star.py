@@ -469,7 +469,7 @@ def _write_vector_rollout_csv(out_path: str, x: np.ndarray, y: np.ndarray,
 @dataclass
 class Args:
     outdir:str; K:int; Nx_eval:int; Nb_outer:int; Nb_inner:int; Nb_dense:int; reduced_rank:int; tau_rel:float
-    T:float; dt:float; Du:float; Dv:float; a_param:float; b_param:float; amp_u:float; amp_v:float; omega:float; fit_lam:float; seed:int; device:str; log_every:int; field_time_stride:int; laplace_checkpoint:str
+    T:float; dt:float; Du:float; Dv:float; a_param:float; b_param:float; amp_u:float; amp_v:float; omega:float; fit_lam:float; seed:int; device:str; log_every:int; field_time_stride:int; save_operators:bool; laplace_checkpoint:str
 
 def parse_args()->Args:
     p=argparse.ArgumentParser(description="MMS-IV dynamic annular-star coupled RD with mixed Section 3 boundary conditions.")
@@ -495,6 +495,7 @@ def parse_args()->Args:
     p.add_argument("--device",type=str,default="cpu");
     p.add_argument("--log_every",type=int,default=50)
     p.add_argument("--field_time_stride", type=int, default=1, help="Save full-field CSV rows every this many time steps; use <=0 to save history only.")
+    p.add_argument("--save_operators", action="store_true", help="Save C, M_omega, and N_omega for inspection.")
     p.add_argument("--laplace_checkpoint",type=str,required=True)
     return Args(**vars(p.parse_args()))
 
@@ -514,7 +515,23 @@ def main():
     dpxid,dpyid=eval_trig_basis_grad_from_meta(xid,yid,meta); C_inner_d=nxid[:,None]*dpxid+nyid[:,None]*dpyid
     C_dense=np.vstack([C_outer_d,C_inner_d])
     sec=tangent_space_from_boundary(C,args.tau_rel); N,_=m_orthonormalize(sec["N"],M,args.reduced_rank); PhiN=Phi@N
+    constraint_residual=float(np.linalg.norm(C@N)/(np.linalg.norm(C)*np.linalg.norm(N)+1e-14))
+    mass_orthonormality_residual=float(np.linalg.norm(N.T@M@N-np.eye(N.shape[1]))/max(np.sqrt(N.shape[1]),1.0))
     print(f"[Section3] M={len(meta)} rank(C)={sec['rank']} null={sec['null_dim']} reduced={N.shape[1]} | mixed outer D / inner N")
+    print(f"[Section3] ||C N_omega||/(||C|| ||N_omega||)={constraint_residual:.3e} mass_residual={mass_orthonormality_residual:.3e}")
+    if args.save_operators:
+        np.savez_compressed(
+            os.path.join(args.outdir,"boundary_operators.npz"),
+            C=C,
+            M_omega=M,
+            N_omega=N,
+            outer_x=xo,
+            outer_y=yo,
+            inner_x=xi,
+            inner_y=yi,
+            inner_normal_x=nxi,
+            inner_normal_y=nyi,
+        )
     plot_domain(grid,os.path.join(args.outdir,"domain.png"),[(xod,yod,"outer Dirichlet"),(xid,yid,"inner Neumann")])
     (u0,v0),_=exact_force(x_in,y_in,0.0,Du=args.Du,Dv=args.Dv,a_param=args.a_param,b_param=args.b_param,amp_u=args.amp_u,amp_v=args.amp_v,omega=args.omega,device=device)
     zu=weighted_lstsq_fit(PhiN,u0,wq,args.fit_lam); zv=weighted_lstsq_fit(PhiN,v0,wq,args.fit_lam)
@@ -560,7 +577,7 @@ def main():
     plot_component(grid,snaps,os.path.join(args.outdir,"snapshots_section3_vs_exact_v.png"),bounds,"v")
     plot_component_change_from_initial(grid,snaps,os.path.join(args.outdir,"change_from_initial_u.png"),bounds,"u")
     plot_component_change_from_initial(grid,snaps,os.path.join(args.outdir,"change_from_initial_v.png"),bounds,"v")
-    summary={"args":to_jsonable(vars(args)),"basis_dim":len(meta),"reduced_rank":int(N.shape[1]),"final_rel_l2":float(rel_arr[-1]),"mean_rel_l2":float(np.mean(rel_arr)),"max_rel_l2":float(np.max(rel_arr)),"final_mixed_bc":float(bc_arr[-1]),"final_change_from_initial":float(change_arr[-1]),"max_change_from_initial":float(np.max(change_arr)),"max_abs_u":float(max_abs_u),"max_abs_v":float(max_abs_v),"laplace_checkpoint_diagnostics":laplace_diagnostics}
+    summary={"args":to_jsonable(vars(args)),"basis_dim":len(meta),"constraint_rank":int(sec["rank"]),"raw_null_dimension":int(sec["null_dim"]),"reduced_rank":int(N.shape[1]),"constraint_residual":constraint_residual,"mass_orthonormality_residual":mass_orthonormality_residual,"final_rel_l2":float(rel_arr[-1]),"mean_rel_l2":float(np.mean(rel_arr)),"max_rel_l2":float(np.max(rel_arr)),"final_mixed_bc":float(bc_arr[-1]),"final_change_from_initial":float(change_arr[-1]),"max_change_from_initial":float(np.max(change_arr)),"max_abs_u":float(max_abs_u),"max_abs_v":float(max_abs_v),"laplace_checkpoint_diagnostics":laplace_diagnostics,"total_time_sec":float(time.perf_counter()-wall_time_start)}
     with open(os.path.join(args.outdir,"summary.json"),"w",encoding="utf-8") as f: json.dump(to_jsonable(summary),f,indent=2)
     _write_table_metrics_json(args.outdir, summary, rel_arr, bc_arr, solution_sq_sum, solution_count)
     _write_vector_rollout_csv(os.path.join(args.outdir,"rollout_fields_and_relerr.csv"), x_in, y_in, field_records, times, rel_arr)

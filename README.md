@@ -84,7 +84,13 @@ gLegONet/
 |-- training/
 |   |-- laplace/                   # Dissipative diagonal block
 |   `-- transport/                 # Shared local density for x/y transport
+`-- workflows/
+    `-- mms_iv/                    # Complete paper-scale MMS-IV reproduction
 ```
+
+## Complete end-to-end workflow
+
+The [`workflows/mms_iv`](workflows/mms_iv/README.md) guide reproduces MMS-IV from ambient $K=22$ Laplace-block training through mixed-boundary matrix construction and RK4 rollout. It gives the complete command-line parameter signature, explains how $C$ and $N_\Omega$ are assembled, and includes a result verifier for the dimensions, residuals, and paper-scale errors.
 
 ## Installation
 
